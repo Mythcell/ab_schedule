@@ -26,6 +26,7 @@ Typical usage:
 
 import numpy as np
 
+
 class Schedule(object):
     """Class containing methods for creating an Astrobites schedule.
 
@@ -45,11 +46,9 @@ class Schedule(object):
             authors (List[str]): List of author initials
             f_authors (str): Path to file containing author initials
         """
-        # if not authors:
-        #     self.authors = list(np.loadtxt(f_authors,dtype=str))
-        # else:
-        #     self.authors = authors
-        self.authors = authors if authors else list(np.loadtxt(f_authors,dtype=str))
+
+        self.authors = authors if authors else list(
+            np.loadtxt(f_authors, dtype=str))
 
 
     def validate_schedule(self, blocks, num_writes=3):
@@ -65,15 +64,15 @@ class Schedule(object):
         Returns:
             True if the schedule is valid, False otherwise
         """
-        wc = {a:0 for a in self.authors}
-        ec = {a:0 for a in self.authors}
+        wc = {a: 0 for a in self.authors}
+        ec = {a: 0 for a in self.authors}
 
         wprev, eprev = set(), set()
-        for _,b in enumerate(blocks):
+        for _, b in enumerate(blocks):
             wseen, eseen = set(), set()
             for w, e in b:
                 if w == e:
-                    print('Error: Writes and edits same post ({},{})'.format(w,e))
+                    print('Error: Writes and edits same post ({},{})'.format(w, e))
                     return False
                 if w in wprev:
                     print('Error: back-to-back write ({})'.format(w))
@@ -100,11 +99,11 @@ class Schedule(object):
 
         # check to make sure all writer counts are equal to [num_writes]
         if set(wc.values()) != {num_writes}:
-            print('Error, not all authors write exactly',num_writes,'times')
+            print('Error, not all authors write exactly', num_writes, 'times')
             return False
         # this step can logically be omitted, but good to double-check regardless
         if set(ec.values()) != {num_writes}:
-            print('Error, not all authors edit exactly',num_writes,'times')
+            print('Error, not all authors edit exactly', num_writes, 'times')
             return False
 
         # otherwise schedule is (hopefully) valid
@@ -134,8 +133,8 @@ class Schedule(object):
                 where each block is a list of (write,edit) tuples.
         """
         # Determine number of blocks to create
-        num_posts = len(self.authors)*num_writes
-        num_blocks = int(np.ceil(num_posts // block_size))
+        # num_posts = len(self.authors)*num_writes
+        # num_blocks = int(np.ceil(num_posts // block_size))
 
         # Create separate pools of writers and editors
         writer_pool, editor_pool = [], []
@@ -147,8 +146,8 @@ class Schedule(object):
         np.random.shuffle(editor_pool)
 
         # Setup some dictionaries to keep track of write/edit counts
-        wc = {a:0 for a in self.authors}
-        ec = {a:0 for a in self.authors}
+        wc = {a: 0 for a in self.authors}
+        ec = {a: 0 for a in self.authors}
 
         # Keep track of iterations
         iter = 0
@@ -162,7 +161,7 @@ class Schedule(object):
         while len(writer_pool) > 0:
 
             if verbose:
-                print('{} left ({})'.format(len(writer_pool),iter))
+                print('{} left ({})'.format(len(writer_pool), iter))
 
             pairs = []
             frozen_writers = set()
@@ -176,8 +175,10 @@ class Schedule(object):
                     return -1
 
                 # select some writers and editors from their respective pools
-                writers = min(list(writer_pool),list(np.random.choice(writer_pool, block_size)))
-                editors = min(list(editor_pool),list(np.random.choice(editor_pool, block_size)))
+                writers = min(list(writer_pool), list(
+                    np.random.choice(writer_pool, block_size)))
+                editors = min(list(editor_pool), list(
+                    np.random.choice(editor_pool, block_size)))
 
                 # ensure all writers and editors are unique
                 if len(writers+editors) != len(set(writers+editors)):
@@ -196,8 +197,8 @@ class Schedule(object):
                 break
 
             # Process writer/editor pairs
-            for w, e in zip(writers,editors):
-                pairs.append((w,e))
+            for w, e in zip(writers, editors):
+                pairs.append((w, e))
                 # Freeze these writers and editors so that
                 # they are not chosen for the next block
                 frozen_writers.add(w)
@@ -228,8 +229,8 @@ class Schedule(object):
 
 
     def write_schedule(self, blocks, queue_posts, beyond_posts,
-            num_queue = 1, num_beyond = 1,
-            first_day='Sunday',beyond_day='Friday',f_out='schedule.csv'):
+                       num_queue=1, num_beyond=1, first_day='Sunday',
+                       beyond_day='Friday', f_out='schedule.csv'):
         """Write the schedule to a csv file.
 
         The output file has the following columns:
@@ -253,13 +254,14 @@ class Schedule(object):
             f_out (str): Name of the output file
         """
 
-        days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+        days = ['Sunday', 'Monday', 'Tuesday',
+                'Wednesday', 'Thursday', 'Friday', 'Saturday']
         first_day_index = days.index(first_day)
         beyond_day_index = days.index(beyond_day)
 
-        f = open(f_out,'w')
+        f = open(f_out, 'w')
 
-        for i,b in enumerate(blocks):
+        for i, b in enumerate(blocks):
             # Note the lists are explicitly copied,
             # so as to ensure that the originals remain unmodified
             postpool = list(b)
@@ -275,11 +277,11 @@ class Schedule(object):
                 # write queue posts
                 for q in qp:
                     f.write(
-                        str(i+1)+','+
-                        str(days[first_day_index])+','+
-                        str(q[0])+','+
-                        str(q[1])+','+
-                        'queue'+'\n'
+                        str(i+1)+','
+                        + str(days[first_day_index])+','
+                        + str(q[0])+','
+                        + str(q[1])+','
+                        + 'queue'+'\n'
                     )
                 current_day = (first_day_index + 1) % len(days)
             else:
@@ -294,35 +296,35 @@ class Schedule(object):
                     # dump all posts onto this day
                     for b in bp:
                         f.write(
-                            str(i+1)+','+
-                            str(days[current_day])+','+
-                            str(b[0])+','+
-                            str(b[1])+','+
-                            'beyond'+'\n'
+                            str(i+1)+','
+                            + str(days[current_day])+','
+                            + str(b[0])+','
+                            + str(b[1])+','
+                            + 'beyond'+'\n'
                         )
-                    bp = [] # incase we loop back to Friday
+                    bp = []  # incase we loop back to Friday
                     current_day = (current_day + 1) % len(days)
                     continue
 
                 # otherwise it's a regular day
                 pi = np.random.choice(len(postpool))
                 f.write(
-                    str(i+1)+','+
-                    str(days[current_day])+','+
-                    str(postpool[pi][0])+','+
-                    str(postpool[pi][1])+',\n'
+                    str(i+1)+','
+                    + str(days[current_day])+','
+                    + str(postpool[pi][0])+','
+                    + str(postpool[pi][1])+',\n'
                 )
-                del postpool[pi] # remove post from postpool
+                del postpool[pi]  # remove post from postpool
                 # loop to the next day
                 current_day = (current_day + 1) % len(days)
 
         # Finally, close the file
         f.close()
-        print('Schedule written to',f_out)
+        print('Schedule written to', f_out)
 
 
-    def get_queue_beyond(self, blocks, block_size, num_writes=3, num_queue=1,\
-        num_beyond=1, max_iter=200000):
+    def get_queue_beyond(self, blocks, block_size, num_writes=3,
+                         num_queue=1, num_beyond=1, max_iter=200000):
         """
         Determines queue and beyond posts from the given blocks.
         Note: queue/beyond posts are not selected for incomplete blocks.
@@ -342,28 +344,33 @@ class Schedule(object):
 
         queue_posts, beyond_posts = [], []
         # dicts to store counts
-        qc = {a:0 for a in self.authors}
-        bc = {a:0 for a in self.authors}
+        qc = {a: 0 for a in self.authors}
+        bc = {a: 0 for a in self.authors}
         iter = 0
 
-        for _,b in enumerate(blocks):
+        for _, b in enumerate(blocks):
             # Loop for selecting queue/beyond posts
             while True:
-                if iter > max_iter: break # incase it's stuck in an infinite loop
-                postlist = list(b) # copy current block
-                qposts, bposts = [], [] # these are temporary lists for each block
+                if iter > max_iter:
+                    break  # incase it's stuck in an infinite loop
+                postlist = list(b)  # copy current block
+                qposts, bposts = [], []  # these are temporary lists for each block
 
                 # Skip queue/beyond selection for incomplete blocks
-                if len(postlist) < block_size: break
+                if len(postlist) < block_size:
+                    break
 
                 # Pick queue posts
-                qi = np.random.choice(range(len(postlist)),num_queue,replace=False)
+                qi = np.random.choice(
+                    range(len(postlist)), num_queue, replace=False)
                 for i in qi:
                     qposts.append(postlist[i])
-                for i in sorted(qi,reverse=True):
-                    del postlist[i] # remove from list to avoid clashing with beyond posts
+                for i in sorted(qi, reverse=True):
+                    # remove from list to avoid clashing with beyond posts
+                    del postlist[i]
                 # Pick beyond posts
-                bi = np.random.choice(range(len(postlist)),num_beyond,replace=False)
+                bi = np.random.choice(
+                    range(len(postlist)), num_beyond, replace=False)
                 for i in bi:
                     bposts.append(postlist[i])
 
@@ -371,9 +378,9 @@ class Schedule(object):
                 valid = True
                 if num_queue + num_beyond < num_writes:
                     for post in qposts + bposts:
-                        if qc[post[0]] + bc[post[0]] > max(num_writes,1):
+                        if qc[post[0]] + bc[post[0]] > max(num_writes, 1):
                             valid = False
-                            break # break for loop
+                            break  # break for loop
 
                 if valid:
                     for post in qposts:
@@ -382,8 +389,8 @@ class Schedule(object):
                         bc[post[0]] += 1
                     queue_posts.extend(qposts)
                     beyond_posts.extend(bposts)
-                    break # break main loop
-                iter += 1 # otherwise increment iter counter
+                    break  # break main loop
+                iter += 1  # otherwise increment iter counter
 
         # This shouldn't happen, but it's good to have extra protection
         if iter > max_iter:
@@ -399,10 +406,9 @@ class Schedule(object):
 
         return queue_posts, beyond_posts
 
-
     def make_schedule(self, num_writes=3, num_regular=5, num_queue=1,
-        num_beyond=1, max_trials=1000, max_iter=200000,verbose=True,
-        write_csv=True):
+                      num_beyond=1, max_trials=1000, max_iter=200000,
+                      verbose=True, write_csv=True):
         """Make a suitable Astrobites schedule.
 
         This code runs a series of trials to randomly generate schedules until
@@ -435,26 +441,61 @@ class Schedule(object):
         t = 0
         while t < max_trials:
             t += 1
-            if verbose: print('Trial',t,'of',max_trials)
-            blocks = self.generate_schedule(num_writes=num_writes,block_size=block_size,
-            verbose=verbose,max_iter=max_iter)
-            if blocks == -1: continue
-            if t == max_trials:
+            if verbose:
+                print('Trial', t, 'of', max_trials)
+            blocks = self.generate_schedule(num_writes=num_writes,
+                block_size=block_size, verbose=verbose, max_iter=max_iter)
+            if blocks == -1:
+                continue
+            if t >= max_trials:
                 print('Exhausted all trials. Try again and/or maybe increase [max_trials]')
                 return None
             # at this point we should have a suitable schedule
             break
 
         # Now get queue and beyond posts
-        queue_posts, beyond_posts = self.get_queue_beyond(blocks, block_size,\
+        queue_posts, beyond_posts = self.get_queue_beyond(blocks, block_size,
             num_queue=num_queue, num_beyond=num_beyond, max_iter=max_iter)
 
         # Write to file only if flag is True and get_queue_beyond succeeded
         if write_csv and queue_posts and beyond_posts:
-            self.write_schedule(blocks, queue_posts, beyond_posts,\
+            self.write_schedule(blocks, queue_posts, beyond_posts,
                 num_queue=num_queue, num_beyond=num_beyond)
 
         return blocks, queue_posts, beyond_posts
+
+
+    def make_secret_santa(self, f_out='secret_santa.csv', verbose=False,
+                          max_trials=1000, max_iter=200000):
+        """Creates a secret santa list.
+        Here each writer is paired with exactly one editor.
+
+        Args:
+            f_out (str): Output file
+            verbose (bool): Whether to print verbose output
+            max_trials (int): The maximum number of trials
+            max_iter (int): Maximum number of iterations per trial
+        """
+
+        t = 0
+        while t < max_trials:
+            t += 1
+            if verbose:
+                print('Trial', t, 'of', max_trials)
+            blocks = self.generate_schedule(num_writes=1, block_size=1,
+                verbose=verbose, max_iter=max_iter)
+            if blocks == -1:
+                continue
+            if t >= max_trials:
+                print('Exhausted all trials. Try again and/or maybe increase [max_trials]')
+                return None
+            break
+
+        with open(f_out,'w') as f:
+            for _,i in enumerate(blocks):
+                for w,e in i:
+                    f.write(str(w)+','+str(e)+'\n')
+        print('Saved secret santa to', f_out)
 
 
     def export_blocks(self, blocks, f_out='blocks.csv'):
@@ -469,14 +510,14 @@ class Schedule(object):
             f_out (str): Output file
         """
 
-        with open(f_out,'w') as f:
+        with open(f_out, 'w') as f:
             f.write('#block,writer,editor\n')
-            for i,b in enumerate(blocks):
-                for w,e in b:
+            for i, b in enumerate(blocks):
+                for w, e in b:
                     f.write(
-                        str(i)+','+
-                        str(w)+','+
-                        str(e)+'\n'
+                        str(i)+','
+                        + str(w)+','
+                        + str(e)+'\n'
                     )
 
 
@@ -491,7 +532,8 @@ class Schedule(object):
         letters = [chr(l+ord('A')) for l in range(26)]
         rand_initials = set()
         while len(rand_initials) < num:
-            rand_initials.add(''.join(np.random.choice(letters,initials_length,replace=False)))
+            rand_initials.add(''.join(np.random.choice(
+                letters, initials_length, replace=False)))
         self.authors = rand_initials
 
 
@@ -500,7 +542,7 @@ class Schedule(object):
         return self.authors
 
 
-    def update_authors(self,authors):
+    def update_authors(self, authors):
         """Updates the list of authors associated with this instance"""
         self.authors = authors
 
@@ -510,11 +552,10 @@ class Schedule(object):
         for a in self.authors:
             print(a)
 
+
 if __name__ == '__main__':
     test = Schedule()
     #test.randomise_authors(1000,3)
-    blocks, queue_posts, beyond_posts = test.make_schedule(verbose=True,max_iter=200000)
-    #print(blocks)
-    #print(queue_posts)
-    #print(beyond_posts)
+    blocks, queue_posts, beyond_posts = test.make_schedule(verbose=True, max_iter=200000)
+    test.make_secret_santa()
     #test.write_schedule(blocks,queue_posts,beyond_posts)
