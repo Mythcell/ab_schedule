@@ -230,11 +230,12 @@ class Schedule(object):
 
     def write_schedule(self, blocks, queue_posts, beyond_posts,
                        num_queue=1, num_beyond=1, first_day='Sunday',
-                       beyond_day='Friday', f_out='schedule.csv'):
+                       beyond_day='Friday', f_out='schedule.csv',
+                       include_header=True):
         """Write the schedule to a csv file.
 
         The output file has the following columns:
-            week_num, day, writer, editor, post_type
+            block_num, day, writer, editor, post_type
         Note: post_type is omitted if the post is regular
 
         By default, queue posts are assigned to the first day.
@@ -260,6 +261,8 @@ class Schedule(object):
         beyond_day_index = days.index(beyond_day)
 
         f = open(f_out, 'w')
+        if include_header:
+            f.write('block_num, day, writer, editor, post_type\n')
 
         for i, b in enumerate(blocks):
             # Note the lists are explicitly copied,
@@ -397,13 +400,6 @@ class Schedule(object):
             print('Unable to determine queue/beyond posts.')
             print('Try lowering num_queue and/or num_beyond, or raising num_writes')
 
-        # Some final debug checks
-        # for i in range(len(blocks)-1):
-        #     for j in queue_posts[i*num_queue:(i+1)*num_queue]:
-        #         assert j in blocks[i]
-        #     for j in beyond_posts[i*num_beyond:(i+1)*num_beyond]:
-        #         assert j in blocks[i]
-
         return queue_posts, beyond_posts
 
     def make_schedule(self, num_writes=3, num_regular=5, num_queue=1,
@@ -437,6 +433,15 @@ class Schedule(object):
         blocks = []
         block_size = num_regular + num_queue + num_beyond
 
+        # Determine if a schedule can be made
+        if len(self.authors) <= 4*block_size:
+            raise ValueError(
+                'There are not enough authors for the given block_size\n'
+                +'Try reducing [num_regular] or adding more authors.')
+
+        if num_queue == 0 or num_beyond == 0:
+            print('W: num_queue or num_beyond is 0, skipping queue/beyond posts')
+
         # First get the schedule
         t = 0
         while t < max_trials:
@@ -453,12 +458,17 @@ class Schedule(object):
             # at this point we should have a suitable schedule
             break
 
-        # Now get queue and beyond posts
-        queue_posts, beyond_posts = self.get_queue_beyond(blocks, block_size,
-            num_queue=num_queue, num_beyond=num_beyond, max_iter=max_iter)
+        # Get queue and beyond posts
+        if num_queue > 0 and num_beyond > 0:
+            queue_posts, beyond_posts = self.get_queue_beyond(blocks, block_size,
+                num_queue=num_queue, num_beyond=num_beyond, max_iter=max_iter)
 
-        # Write to file only if flag is True and get_queue_beyond succeeded
-        if write_csv and queue_posts and beyond_posts:
+        # Export blocks if get_queue_beyond returns empty arrays
+        if not queue_posts and not beyond_posts:
+            self.export_blocks(blocks)
+
+        # Write to file only if flag is True
+        if write_csv:
             self.write_schedule(blocks, queue_posts, beyond_posts,
                 num_queue=num_queue, num_beyond=num_beyond)
 
@@ -557,5 +567,5 @@ if __name__ == '__main__':
     test = Schedule()
     #test.randomise_authors(1000,3)
     blocks, queue_posts, beyond_posts = test.make_schedule(verbose=True, max_iter=200000)
-    test.make_secret_santa()
+    #test.make_secret_santa()
     #test.write_schedule(blocks,queue_posts,beyond_posts)
